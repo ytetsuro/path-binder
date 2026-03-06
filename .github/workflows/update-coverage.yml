@@ -1,0 +1,40 @@
+name: Update Coverage
+
+on:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: write
+
+jobs:
+  update-coverage:
+    name: Update Coverage Data
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Run coverage
+        run: npm run test:run -- --coverage
+
+      - name: Push coverage to coverage-data branch
+        run: |
+          cp coverage/coverage-summary.json /tmp/coverage-summary.json
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin coverage-data 2>/dev/null && git checkout coverage-data || git checkout --orphan coverage-data
+          git rm -rf . 2>/dev/null || true
+
+          cp /tmp/coverage-summary.json coverage-summary.json
+          git add coverage-summary.json
+          git commit -m "Update coverage data for ${COMMIT_SHA}"
+          git push origin coverage-data

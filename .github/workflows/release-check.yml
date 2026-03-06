@@ -1,0 +1,27 @@
+name: Release Check
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  version-check:
+    name: Version Bump Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check version was updated
+        run: |
+          BASE_VERSION=$(git show origin/master:package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).version")
+          HEAD_VERSION=$(node -p "require('./package.json').version")
+          if [ "$BASE_VERSION" = "$HEAD_VERSION" ]; then
+            echo "::error::package.json version has not been updated. Please bump the version before release."
+            exit 1
+          fi
+          echo "Version: $BASE_VERSION -> $HEAD_VERSION"

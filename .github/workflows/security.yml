@@ -1,0 +1,36 @@
+name: Security
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - master
+  schedule:
+    - cron: "0 9 * * 1" # Every Monday 18:00 JST
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high
+
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+      - uses: github/codeql-action/analyze@v3

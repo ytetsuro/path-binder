@@ -1,0 +1,150 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+
+  test:
+    name: Test (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: npm run test:run
+
+  coverage:
+    name: Coverage Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Run coverage on PR branch
+        run: npm run test:run -- --coverage
+
+      - name: Fetch base coverage from coverage-data branch
+        id: base
+        run: |
+          BASE_JSON=$(curl -sSf \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3.raw" \
+            "https://api.github.com/repos/${{ github.repository }}/contents/coverage-summary.json?ref=coverage-data" \
+            2>/dev/null) || true
+
+          if [ -n "$BASE_JSON" ]; then
+            BASE_COVERAGE=$(echo "$BASE_JSON" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).total.lines.pct")
+            echo "base_coverage=$BASE_COVERAGE" >> "$GITHUB_OUTPUT"
+            echo "has_base=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_base=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Extract PR coverage
+        id: pr
+        run: |
+          PR_COVERAGE=$(node -p "JSON.parse(require('fs').readFileSync('coverage/coverage-summary.json','utf8')).total.lines.pct")
+          echo "pr_coverage=$PR_COVERAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Compare coverage
+        if: steps.base.outputs.has_base == 'true'
+        id: compare
+        run: |
+          echo "Base coverage: ${{ steps.base.outputs.base_coverage }}%"
+          echo "PR coverage:   ${{ steps.pr.outputs.pr_coverage }}%"
+          if (( $(echo "${{ steps.pr.outputs.pr_coverage }} < ${{ steps.base.outputs.base_coverage }}" | bc -l) )); then
+            echo "dropped=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "dropped=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comment on PR if coverage dropped
+        if: steps.compare.outputs.dropped == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const base = parseFloat('${{ steps.base.outputs.base_coverage }}');
+            const pr = parseFloat('${{ steps.pr.outputs.pr_coverage }}');
+            const diff = (pr - base).toFixed(2);
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                '## Coverage Regression Detected',
+                '',
+                'This pull request decreases code coverage and cannot be merged.',
+                '',
+                '| | Coverage |',
+                '|---|---|',
+                `| Base branch | ${base}% |`,
+                `| PR branch | ${pr}% |`,
+                `| Diff | ${diff}% |`,
+                '',
+                'Please add tests to maintain or improve coverage before merging.',
+              ].join('\n'),
+            });
+
+      - name: Fail if coverage dropped
+        if: steps.compare.outputs.dropped == 'true'
+        run: |
+          echo "::error::Coverage dropped from ${{ steps.base.outputs.base_coverage }}% to ${{ steps.pr.outputs.pr_coverage }}%. Please add tests."
+          exit 1
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, test, coverage]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
