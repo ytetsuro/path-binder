@@ -1,0 +1,52 @@
+{
+  "name": "path-binder",
+  "version": "0.0.1",
+  "description": "Zero-dependency TypeScript library that generates nested object structures from path-value pairs (e.g. user.name, items[].price). Supports schema-based type casting, array indexing, $key grouping, and multi-source data merging",
+  "type": "module",
+  "license": "MIT",
+  "author": "ytetsuro",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ytetsuro/path-binder.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ytetsuro/path-binder/issues"
+  },
+  "homepage": "https://github.com/ytetsuro/path-binder#readme",
+  "keywords": [
+    "json",
+    "path",
+    "nested-object",
+    "schema",
+    "type-casting",
+    "typescript",
+    "zero-dependency"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint src"
+  },
+  "devDependencies": {
+    "@types/node": "^20.x",
+    "oxlint": "^1.50.0",
+    "tsup": "^8.x",
+    "typescript": "^5.x",
+    "vitest": "^2.x"
+  }
+}

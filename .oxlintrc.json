@@ -1,0 +1,8 @@
+{
+  "rules": {
+    "func-style": ["error", "declaration"],
+    "no-var": "error",
+    "prefer-const": "error",
+    "no-param-reassign": "error"
+  }
+}
