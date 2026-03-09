@@ -559,6 +559,22 @@ describe('integration tests', () => {
       expect(skipped[0].reason).toStrictEqual('no_primary_data')
     })
 
+    it('no_primary_data + invalid reference: reports specific validation errors', () => {
+      const input: InputData = {
+        sheet1: [
+          // valid reference row → no_primary_data
+          [{ path: 'user.$id', value: 1 }, { path: 'user.role', value: 'admin' }],
+          // invalid reference row ($key value is null) → invalid_key_value
+          [{ path: 'user.$id', value: null as unknown as string }, { path: 'user.role', value: 'editor' }],
+        ],
+      }
+      const { result, skipped } = generate(input)
+      expect(result).toStrictEqual({})
+      expect(skipped.length).toStrictEqual(2)
+      const reasons = skipped.map((s) => s.reason).sort()
+      expect(reasons).toStrictEqual(['invalid_key_value', 'no_primary_data'])
+    })
+
     it('property_conflict: primary data wins + skip reported', () => {
       const input: InputData = {
         sheetA: [

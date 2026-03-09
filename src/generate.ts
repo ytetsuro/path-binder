@@ -81,9 +81,13 @@ function processReference(
     return []
   }
 
+  // Reason for validating before checking entity count:
+  // Users should see specific validation errors (nested_key, invalid_key_value, etc.)
+  // even when no primary data exists, to aid debugging reference row definitions
+  const { valid, skipped: vSkipped } = validateReferenceRows(reference)
+
   if (entities.length === 0) {
-    // All rows are $key rows with no primary data → skip all reference rows
-    return reference.map((row) => {
+    const noPrimarySkipped = valid.map((row) => {
       const keyPair = row.pairs.find((p) => p.segments.some((s) => s.isKey))
       return {
         name: row.source.sheet,
@@ -95,11 +99,11 @@ function processReference(
         reason: 'no_primary_data' as const,
       }
     })
+    return vSkipped.concat(noPrimarySkipped)
   }
 
-  const { valid, skipped: vSkipped } = validateReferenceRows(reference)
   if (valid.length === 0) {
-    return [...vSkipped]
+    return vSkipped.slice()
   }
 
   const refGroups = group(valid)
