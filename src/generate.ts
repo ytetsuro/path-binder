@@ -1,17 +1,15 @@
-import type { InputData, GenerateOptions, GenerateResult, PathSegment } from './types'
+import type { InputData, GenerateOptions, GenerateResult, ParseSkipped, ParsedRow, BuiltEntity, PathSegment } from './types'
 import { flatten } from './pipeline/flatten'
 import { transform } from './pipeline/transform'
 import { group } from './pipeline/group'
-import { build } from './pipeline/build'
+import { buildEntities } from './pipeline/build'
+import { separate } from './pipeline/separate'
+import { validateReferenceRows } from './pipeline/validate'
+import { resolve } from './pipeline/resolve'
+import { toRecord } from './store/toRecord'
 
 /**
  * The library's sole entry point.
- *
- * Connects the 5-stage pipeline to generate objects from input data.
- * flatten → transform → group → build → collect
- *
- * Reason for creating/destroying scoped cache (Map) in this function scope:
- * Module-level persistent cache risks unbounded growth of path strings
  *
  * Reason for returning GenerateResult instead of just Record:
  * Allows callers to inspect skipped entries without losing partial results
@@ -20,6 +18,22 @@ export function generate(
   input: InputData,
   options?: GenerateOptions,
 ): GenerateResult {
+  const { primary, reference, skipped } = parse(input, options)
+  const entities = buildPrimary(primary)
+  const refSkipped = processReference(reference, entities)
+  return assembleResult(entities, skipped.concat(refSkipped))
+}
+
+/**
+ * Reason for bundling flatten/transform/separate into one function:
+ * Keeps generate() at a single abstraction level (Composed Method)
+ */
+function parse(
+  input: InputData,
+  options?: GenerateOptions,
+): { readonly primary: readonly ParsedRow[]; readonly reference: readonly ParsedRow[]; readonly skipped: ParseSkipped[] } {
+  // Reason for creating/destroying scoped cache in this function scope:
+  // Module-level persistent cache risks unbounded growth of path strings
   const cache = new Map<string, readonly PathSegment[]>()
   const schema = options?.schema
   // Reason for defaulting here instead of in transform:
@@ -27,11 +41,74 @@ export function generate(
   const skipScope = options?.skipScope ?? 'cell'
 
   const flatRows = flatten(input)
-  const { rows: parsedRows, skipped } = transform(flatRows, cache, schema, skipScope)
-  const groups = group(parsedRows)
-  const records = build(groups)
+  const { rows, skipped } = transform(flatRows, cache, schema, skipScope)
+  const { primary, reference } = separate(rows)
+  return { primary, reference, skipped }
+}
 
-  return { result: collect(records), skipped }
+/**
+ * Reason for extracting as a separate function:
+ * Symmetric with processReference, keeps generate() at a uniform abstraction level
+ */
+function buildPrimary(rows: readonly ParsedRow[]): BuiltEntity[] {
+  const groups = group(rows)
+  return buildEntities(groups)
+}
+
+/**
+ * Reason for extracting as a separate function:
+ * Keeps generate() free of output-formatting details (Composed Method)
+ */
+function assembleResult(
+  entities: readonly BuiltEntity[],
+  skipped: readonly ParseSkipped[],
+): GenerateResult {
+  const records = entities.map((e) => toRecord(e.store))
+  return { result: collect(records), skipped: skipped.slice() }
+}
+
+/**
+ * Process reference rows against existing entities.
+ *
+ * Reason for extracting as a separate function:
+ * Aligns abstraction level with other pipeline stages called in generate()
+ */
+function processReference(
+  reference: readonly ParsedRow[],
+  entities: readonly BuiltEntity[],
+): ParseSkipped[] {
+  if (reference.length === 0) {
+    return []
+  }
+
+  // Reason for validating before checking entity count:
+  // Users should see specific validation errors (nested_key, invalid_key_value, etc.)
+  // even when no primary data exists, to aid debugging reference row definitions
+  const { valid, skipped: vSkipped } = validateReferenceRows(reference)
+
+  if (entities.length === 0) {
+    const noPrimarySkipped = valid.map((row) => {
+      const keyPair = row.pairs.find((p) => p.segments.some((s) => s.isKey))
+      return {
+        name: row.source.sheet,
+        path: keyPair
+          ? keyPair.segments.map((s) => s.isKey ? `$${s.name}` : s.name).join('.')
+          : '',
+        value: keyPair ? String(keyPair.value) : '',
+        index: row.source.index,
+        reason: 'no_primary_data' as const,
+      }
+    })
+    return vSkipped.concat(noPrimarySkipped)
+  }
+
+  if (valid.length === 0) {
+    return vSkipped.slice()
+  }
+
+  const refGroups = group(valid)
+  const { skipped: rSkipped } = resolve(refGroups, entities)
+  return vSkipped.concat(rSkipped)
 }
 
 /**

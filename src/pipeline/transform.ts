@@ -70,21 +70,27 @@ function processPairs(
   const rowSkips: ParseSkipped[] = []
 
   for (const pair of flatRow.row) {
-    let segments: readonly PathSegment[]
+    // Reason for wrapping parse + filter + cast in a single try block:
+    // All three are "process this pair" steps at the same abstraction level;
+    // isAllowed cannot throw, and CastFn errors should be gracefully skipped, not crash generate()
     try {
-      segments = cachedParsePath(pair.path, cache)
-    } catch (e) {
-      const reason: ParseSkipReason = e instanceof SegmentError ? e.reason : 'empty'
-      const skip: ParseSkipped = {
-        name: flatRow.source.sheet,
-        path: pair.path,
-        value: String(pair.value),
-        index: flatRow.source.index,
-        reason,
+      const segments = cachedParsePath(pair.path, cache)
+
+      if (isAllowed !== undefined && !isAllowed(segments)) {
+        continue
       }
 
+      const value = castValue !== undefined
+        ? castValue(segments, pair.value)
+        : pair.value
+
+      // Reason for using push instead of concat:
+      // Need to check for empty array after processing all pairs, so append to mutable local array each time
+      pairs.push({ segments, value })
+    } catch (e) {
+      const skip = toSkipEntry(e, flatRow, pair)
+
       if (skipScope === 'row') {
-        // Reason for using push: appending to local mutable array within function scope
         rowSkips.push(skip)
         // Commit all accumulated row skips and discard the entire row
         for (const s of rowSkips) {
@@ -94,25 +100,34 @@ function processPairs(
       }
 
       // cell mode: skip only this pair, continue processing others
-      // Reason for using push: appending to output parameter array within controlled scope
       skipped.push(skip)
-      continue
     }
-
-    if (isAllowed !== undefined && !isAllowed(segments)) {
-      continue
-    }
-
-    const value = castValue !== undefined
-      ? castValue(segments, pair.value)
-      : pair.value
-
-    // Reason for using push instead of concat:
-    // Need to check for empty array after processing all pairs, so append to mutable local array each time
-    pairs.push({ segments, value })
   }
 
   return pairs
+}
+
+/**
+ * Build a ParseSkipped entry from a caught parse error.
+ *
+ * Reason for extracting as a separate function:
+ * Keeps catch block at the same abstraction level as the rest of processPairs (Composed Method)
+ */
+function toSkipEntry(
+  error: unknown,
+  flatRow: FlatRow,
+  pair: { readonly path: string; readonly value: unknown },
+): ParseSkipped {
+  // Reason for distinguishing SegmentError vs other errors:
+  // SegmentError comes from parsePath (parse failure), other errors come from CastFn (cast failure)
+  const reason: ParseSkipReason = error instanceof SegmentError ? error.reason : 'cast'
+  return {
+    name: flatRow.source.sheet,
+    path: pair.path,
+    value: String(pair.value),
+    index: flatRow.source.index,
+    reason,
+  }
 }
 
 /**

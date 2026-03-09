@@ -1,4 +1,7 @@
 export { flatten } from './flatten'
 export { transform } from './transform'
 export { group } from './group'
-export { build } from './build'
+export { build, buildEntities } from './build'
+export { separate } from './separate'
+export { validateReferenceRows } from './validate'
+export { resolve } from './resolve'
