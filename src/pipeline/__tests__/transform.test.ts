@@ -155,6 +155,32 @@ describe('transform', () => {
 
       expect(skipped[0].reason).toStrictEqual('bracket')
     })
+
+    it('skips pair with cast reason when CastFn throws', () => {
+      const throwingCast = () => {
+        throw new Error('cast failed')
+      }
+      const schema = { user: { name: throwingCast } }
+      const rows = [
+        flatRow([
+          { path: 'user.name', value: 'Taro' },
+          { path: 'user.age', value: 30 },
+        ]),
+      ]
+      const cache = new Map<string, readonly PathSegment[]>()
+      const { rows: result, skipped } = transform(rows, cache, schema)
+
+      // user.name is skipped due to CastFn failure; user.age is filtered by schema
+      expect(result).toStrictEqual([])
+      expect(skipped.length).toStrictEqual(1)
+      expect(skipped[0]).toStrictEqual({
+        name: 'sheet',
+        path: 'user.name',
+        value: 'Taro',
+        index: 0,
+        reason: 'cast',
+      })
+    })
   })
 
   describe('skip handling (row mode)', () => {

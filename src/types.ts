@@ -92,6 +92,7 @@ export type ParseSkipReason =
   | 'invalid_key_value'    // $key value is not primitive
   | 'mixed_key_root'       // $key segments in same row belong to different root paths
   | 'property_conflict'    // reference data conflicts with primary data property
+  | 'cast'                 // CastFn threw during value casting
 
 /**
  * Information about a skipped path-value pair.
