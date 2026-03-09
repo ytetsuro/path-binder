@@ -157,7 +157,7 @@ describe('transform', () => {
     })
 
     it('skips pair with cast reason when CastFn throws', () => {
-      const throwingCast = () => {
+      function throwingCast() {
         throw new Error('cast failed')
       }
       const schema = { user: { name: throwingCast } }
