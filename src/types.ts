@@ -79,12 +79,19 @@ export type ParsedRow = {
  * Exhaustive union ensures all skip reasons are documented and handled
  */
 export type ParseSkipReason =
-  | 'empty'     // segment is empty string
-  | 'escape'    // $$ missing name
-  | 'key'       // $ missing name
-  | 'unnamed'   // [] without preceding name
-  | 'bracket'   // missing closing ]
-  | 'index'     // non-numeric index
+  | 'empty'                // segment is empty string
+  | 'escape'               // $$ missing name
+  | 'key'                  // $ missing name
+  | 'unnamed'              // [] without preceding name
+  | 'bracket'              // missing closing ]
+  | 'index'                // non-numeric index
+  | 'reference_not_found'  // $key reference target not found
+  | 'no_primary_data'      // all rows are $key rows (no primary data)
+  | 'conflicting_key_prop' // same row has $key and non-$key with same name
+  | 'nested_key'           // $key inside array path (e.g. info[].$type)
+  | 'invalid_key_value'    // $key value is not primitive
+  | 'mixed_key_root'       // $key segments in same row belong to different root paths
+  | 'property_conflict'    // reference data conflicts with primary data property
 
 /**
  * Information about a skipped path-value pair.
@@ -109,6 +116,20 @@ export type ParseSkipped = {
 export type GenerateResult = {
   readonly result: Record<string, unknown>
   readonly skipped: readonly ParseSkipped[]
+}
+
+/**
+ * Entity built from Pass 1 (primary data).
+ * Retains the Map store for later mutation by Pass 2 (reference resolution).
+ *
+ * Reason for not converting to Record immediately:
+ * resolve needs to write additional properties via writeToStore,
+ * which requires mutable Map access. Conversion to Record is deferred to collect.
+ */
+export type BuiltEntity = {
+  readonly store: Map<string, unknown>
+  readonly rootPath: string
+  readonly source: readonly RowSource[]
 }
 
 /**

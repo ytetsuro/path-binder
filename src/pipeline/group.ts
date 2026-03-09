@@ -29,20 +29,27 @@ export function group(rows: readonly ParsedRow[]): Group[] {
  * Extract grouping key string from a row.
  *
  * Key determination rules:
- * - Rows with $key segments: identify group by $key path:value combinations
+ * - Rows with $key segments: identify group by $key pairs + non-array non-$key prop pairs
  * - Rows without $key: identify group by path:value of all prop segments excluding arrayProp/indexProp
+ *
+ * Reason for including non-array non-$key props in $key rows:
+ * Same $key value but different non-array props should form separate groups
+ * (e.g. $id=1 + role=admin vs $id=1 + role=editor → different reference data)
  *
  * Reason for using concatenated path:value strings instead of JSON.stringify:
  * Keys are only used for Map lookups, so uniqueness is sufficient.
  * JSON.stringify has higher overhead
  */
 function extractKey(pairs: readonly ParsedPair[]): string {
-  const keyParts = pairs
-    .filter((p) => hasKeySegment(p))
-    .map((p) => formatKeyPair(p))
+  const keyPairs = pairs.filter((p) => hasKeySegment(p))
 
-  if (keyParts.length > 0) {
-    return keyParts.join('|')
+  if (keyPairs.length > 0) {
+    // $key pairs + non-array non-$key prop pairs compose the grouping key
+    const nonKeyPropPairs = pairs
+      .filter((p) => !hasKeySegment(p) && isAllPropSegments(p))
+    return keyPairs.concat(nonKeyPropPairs)
+      .map((p) => formatKeyPair(p))
+      .join('|')
   }
 
   // When no $key: identify by path:value of all prop segments excluding arrayProp/indexProp

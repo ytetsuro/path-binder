@@ -10,14 +10,14 @@ import type { InputData } from '../types'
 
 describe('integration tests', () => {
   describe('basic usage examples', () => {
-    it('reproduces the design document usage example as-is', () => {
+    it('reproduces the design document usage example (primary + reference)', () => {
       const input: InputData = {
         sheetA: [
-          [{ path: 'user.$id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+          [{ path: 'user.id', value: 2 }, { path: 'user.name', value: 'Jiro' }],
         ],
         sheetB: [
           [{ path: 'user.$id', value: 1 }, { path: 'user.info[].type', value: 'google' }],
-          [{ path: 'user.$id', value: 2 }, { path: 'user.name', value: 'Jiro' }],
         ],
       }
       const schema = defineSchema({
@@ -38,10 +38,10 @@ describe('integration tests', () => {
   })
 
   describe('cross-sheet merge', () => {
-    it('merges rows with same $key from different sheets into one object', () => {
+    it('merges reference rows with same $key from different sheets', () => {
       const input: InputData = {
         sheetA: [
-          [{ path: 'user.$id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
         ],
         sheetB: [
           [{ path: 'user.$id', value: 1 }, { path: 'user.info[].type', value: 'google' }],
@@ -53,10 +53,10 @@ describe('integration tests', () => {
       })
     })
 
-    it('merges rows with same $key across 3 sheets', () => {
+    it('merges reference rows with same $key across 3 sheets', () => {
       const input: InputData = {
         sheetA: [
-          [{ path: 'user.$id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
         ],
         sheetB: [
           [{ path: 'user.$id', value: 1 }, { path: 'user.info[].type', value: 'google' }],
@@ -72,12 +72,12 @@ describe('integration tests', () => {
     })
   })
 
-  describe('$key grouping', () => {
-    it('groups rows with same $key value across sheets', () => {
+  describe('$key reference', () => {
+    it('applies reference data to matching entities across sheets', () => {
       const input: InputData = {
         sheetA: [
-          [{ path: 'user.$id', value: 1 }, { path: 'user.name', value: 'Taro' }],
-          [{ path: 'user.$id', value: 2 }, { path: 'user.name', value: 'Jiro' }],
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+          [{ path: 'user.id', value: 2 }, { path: 'user.name', value: 'Jiro' }],
         ],
         sheetB: [
           [{ path: 'user.$id', value: 1 }, { path: 'user.info[].type', value: 'google' }],
@@ -92,12 +92,12 @@ describe('integration tests', () => {
       })
     })
 
-    it('groups by composite $key (multiple $ segments)', () => {
+    it('groups primary data by auto-grouping (composite key without $)', () => {
       const input: InputData = {
         sheet1: [
-          [{ path: 'record.$type', value: 'A' }, { path: 'record.$code', value: 1 }, { path: 'record.data[]', value: 'x' }],
-          [{ path: 'record.$type', value: 'A' }, { path: 'record.$code', value: 1 }, { path: 'record.data[]', value: 'y' }],
-          [{ path: 'record.$type', value: 'A' }, { path: 'record.$code', value: 2 }, { path: 'record.data[]', value: 'z' }],
+          [{ path: 'record.type', value: 'A' }, { path: 'record.code', value: 1 }, { path: 'record.data[]', value: 'x' }],
+          [{ path: 'record.type', value: 'A' }, { path: 'record.code', value: 1 }, { path: 'record.data[]', value: 'y' }],
+          [{ path: 'record.type', value: 'A' }, { path: 'record.code', value: 2 }, { path: 'record.data[]', value: 'z' }],
         ],
       }
       const { result } = generate(input)
@@ -167,9 +167,12 @@ describe('integration tests', () => {
       })
     })
 
-    it('combines $key + nesting + array', () => {
+    it('combines primary data with nesting + array via $key reference', () => {
       const input: InputData = {
         sheet1: [
+          [{ path: 'user.id', value: 1 }],
+        ],
+        sheet2: [
           [{ path: 'user.$id', value: 1 }, { path: 'user.profile.tags[]', value: 'admin' }],
           [{ path: 'user.$id', value: 1 }, { path: 'user.profile.tags[]', value: 'editor' }],
         ],
@@ -206,10 +209,10 @@ describe('integration tests', () => {
   })
 
   describe('schema + cross-sheet', () => {
-    it('filters with schema while merging cross-sheet', () => {
+    it('filters with schema while merging cross-sheet via $key', () => {
       const input: InputData = {
         sheetA: [
-          [{ path: 'user.$id', value: '1' }, { path: 'user.name', value: 'Taro' }, { path: 'user.debug', value: 'x' }],
+          [{ path: 'user.id', value: '1' }, { path: 'user.name', value: 'Taro' }, { path: 'user.debug', value: 'x' }],
         ],
         sheetB: [
           [{ path: 'user.$id', value: '1' }, { path: 'user.info[].type', value: 'google' }, { path: 'user.temp', value: 'y' }],
@@ -293,9 +296,9 @@ describe('integration tests', () => {
     it('processes only valid rows from a sheet containing invalid rows', () => {
       const input: InputData = {
         sheet1: [
-          [{ path: 'user.$id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
           [{ path: '', value: 'bad' }],
-          [{ path: 'user.$id', value: 2 }, { path: 'user.name', value: 'Jiro' }],
+          [{ path: 'user.id', value: 2 }, { path: 'user.name', value: 'Jiro' }],
         ],
       }
       const { result, skipped } = generate(input)
@@ -373,6 +376,206 @@ describe('integration tests', () => {
           { lang: 'ja' },
         ],
       })
+    })
+  })
+
+  describe('$key reference key (FINAL_DESIGN examples)', () => {
+    it('example 1: basic reference (applies to multiple matching entities)', () => {
+      const input: InputData = {
+        sheetA: [
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Jiro' }],
+        ],
+        sheetB: [
+          [{ path: 'user.$id', value: 1 }, { path: 'user.info[].type', value: 'google' }],
+        ],
+      }
+      const { result } = generate(input)
+      expect(result).toStrictEqual({
+        user: [
+          { id: 1, name: 'Taro', info: [{ type: 'google' }] },
+          { id: 1, name: 'Jiro', info: [{ type: 'google' }] },
+        ],
+      })
+    })
+
+    it('example 2: mixed primary and reference rows in same sheet', () => {
+      const input: InputData = {
+        sheetA: [
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Jiro' }],
+        ],
+        sheetB: [
+          [{ path: 'user.$id', value: 1 }, { path: 'user.info[].type', value: 'google' }],
+          [{ path: 'user.id', value: 2 }, { path: 'user.name', value: 'Saburo' }],
+        ],
+      }
+      const { result } = generate(input)
+      expect(result).toStrictEqual({
+        user: [
+          { id: 1, name: 'Taro', info: [{ type: 'google' }] },
+          { id: 1, name: 'Jiro', info: [{ type: 'google' }] },
+          { id: 2, name: 'Saburo' },
+        ],
+      })
+    })
+
+    it('example 3: reference any property', () => {
+      const input: InputData = {
+        sheetA: [
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+        ],
+        sheetB: [
+          [{ path: 'user.$id', value: 1 }, { path: 'user.role', value: 'admin' }],
+        ],
+      }
+      const { result } = generate(input)
+      expect(result).toStrictEqual({
+        user: [
+          { id: 1, name: 'Taro', role: 'admin' },
+        ],
+      })
+    })
+
+    it('example 4: array aggregation (primary) + reference', () => {
+      const input: InputData = {
+        sheetA: [
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }, { path: 'user.tags[]', value: 'admin' }],
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }, { path: 'user.tags[]', value: 'editor' }],
+        ],
+        sheetB: [
+          [{ path: 'user.$name', value: 'Taro' }, { path: 'user.info[].type', value: 'google' }],
+        ],
+      }
+      const { result } = generate(input)
+      expect(result).toStrictEqual({
+        user: [
+          { id: 1, name: 'Taro', tags: ['admin', 'editor'], info: [{ type: 'google' }] },
+        ],
+      })
+    })
+
+    it('example 5: reference not found (error reporting)', () => {
+      const input: InputData = {
+        sheetA: [
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+        ],
+        sheetB: [
+          [{ path: 'user.$id', value: 999 }, { path: 'user.role', value: 'admin' }],
+        ],
+      }
+      const { result, skipped } = generate(input)
+      expect(result).toStrictEqual({
+        user: [
+          { id: 1, name: 'Taro' },
+        ],
+      })
+      expect(skipped.length).toStrictEqual(1)
+      expect(skipped[0].reason).toStrictEqual('reference_not_found')
+    })
+
+    it('example 6: multiple $key AND search', () => {
+      const input: InputData = {
+        sheetA: [
+          [{ path: 'user.id', value: 1 }, { path: 'user.type', value: 'A' }, { path: 'user.name', value: 'Taro' }],
+          [{ path: 'user.id', value: 2 }, { path: 'user.type', value: 'A' }, { path: 'user.name', value: 'Jiro' }],
+          [{ path: 'user.id', value: 3 }, { path: 'user.type', value: 'B' }, { path: 'user.name', value: 'Saburo' }],
+        ],
+        sheetB: [
+          [{ path: 'user.$id', value: 1 }, { path: 'user.$type', value: 'A' }, { path: 'user.flag', value: true }],
+        ],
+      }
+      const { result } = generate(input)
+      expect(result).toStrictEqual({
+        user: [
+          { id: 1, type: 'A', name: 'Taro', flag: true },
+          { id: 2, type: 'A', name: 'Jiro' },
+          { id: 3, type: 'B', name: 'Saburo' },
+        ],
+      })
+    })
+
+    it('example 7: $key row array aggregation', () => {
+      const input: InputData = {
+        sheetA: [
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+        ],
+        sheetB: [
+          [{ path: 'user.$id', value: 1 }, { path: 'user.info[].type', value: 'google' }],
+          [{ path: 'user.$id', value: 1 }, { path: 'user.info[].type', value: 'facebook' }],
+        ],
+      }
+      const { result } = generate(input)
+      expect(result).toStrictEqual({
+        user: [
+          { id: 1, name: 'Taro', info: [{ type: 'google' }, { type: 'facebook' }] },
+        ],
+      })
+    })
+
+    it('single-sheet mixing: primary and reference rows in same sheet', () => {
+      const input: InputData = {
+        sheet1: [
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+          [{ path: 'user.$id', value: 1 }, { path: 'user.role', value: 'admin' }],
+          [{ path: 'user.id', value: 2 }, { path: 'user.name', value: 'Jiro' }],
+        ],
+      }
+      const { result } = generate(input)
+      expect(result).toStrictEqual({
+        user: [
+          { id: 1, name: 'Taro', role: 'admin' },
+          { id: 2, name: 'Jiro' },
+        ],
+      })
+    })
+
+    it('$name reference: searches by arbitrary property name', () => {
+      const input: InputData = {
+        sheetA: [
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+        ],
+        sheetB: [
+          [{ path: 'user.$name', value: 'Taro' }, { path: 'user.info[].type', value: 'google' }],
+        ],
+      }
+      const { result } = generate(input)
+      expect(result).toStrictEqual({
+        user: [
+          { id: 1, name: 'Taro', info: [{ type: 'google' }] },
+        ],
+      })
+    })
+
+    it('all rows are $key (no_primary_data)', () => {
+      const input: InputData = {
+        sheet1: [
+          [{ path: 'user.$id', value: 1 }, { path: 'user.role', value: 'admin' }],
+        ],
+      }
+      const { result, skipped } = generate(input)
+      expect(result).toStrictEqual({})
+      expect(skipped.length).toStrictEqual(1)
+      expect(skipped[0].reason).toStrictEqual('no_primary_data')
+    })
+
+    it('property_conflict: primary data wins + skip reported', () => {
+      const input: InputData = {
+        sheetA: [
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+        ],
+        sheetB: [
+          [{ path: 'user.$id', value: 1 }, { path: 'user.name', value: 'Override' }],
+        ],
+      }
+      const { result, skipped } = generate(input)
+      expect(result).toStrictEqual({
+        user: [
+          { id: 1, name: 'Taro' },
+        ],
+      })
+      expect(skipped.length).toStrictEqual(1)
+      expect(skipped[0].reason).toStrictEqual('property_conflict')
     })
   })
 })

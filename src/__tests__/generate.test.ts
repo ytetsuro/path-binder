@@ -28,10 +28,10 @@ describe('generate', () => {
       expect(result).toStrictEqual({ user: [{ name: 'Taro' }] })
     })
 
-    it('merges multiple rows in the same group', () => {
+    it('merges primary data and reference data via $key', () => {
       const input: InputData = {
         sheet1: [
-          [{ path: 'user.$id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
           [{ path: 'user.$id', value: 1 }, { path: 'user.info[].type', value: 'google' }],
         ],
       }
@@ -43,11 +43,11 @@ describe('generate', () => {
   })
 
   describe('multiple groups', () => {
-    it('generates multiple groups with different $key values', () => {
+    it('generates multiple groups with auto-grouping (no $key)', () => {
       const input: InputData = {
         sheet1: [
-          [{ path: 'user.$id', value: 1 }, { path: 'user.name', value: 'Taro' }],
-          [{ path: 'user.$id', value: 2 }, { path: 'user.name', value: 'Jiro' }],
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+          [{ path: 'user.id', value: 2 }, { path: 'user.name', value: 'Jiro' }],
         ],
       }
       const { result } = generate(input)
@@ -61,10 +61,10 @@ describe('generate', () => {
   })
 
   describe('cross-sheet merge', () => {
-    it('merges rows with same $key from different sheets', () => {
+    it('merges reference rows with same $key from different sheets', () => {
       const input: InputData = {
         sheetA: [
-          [{ path: 'user.$id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
         ],
         sheetB: [
           [{ path: 'user.$id', value: 1 }, { path: 'user.info[].type', value: 'google' }],
@@ -76,13 +76,13 @@ describe('generate', () => {
       })
     })
 
-    it('different $key values from different sheets become separate groups', () => {
+    it('different primary data from different sheets become separate groups', () => {
       const input: InputData = {
         sheetA: [
-          [{ path: 'user.$id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
         ],
         sheetB: [
-          [{ path: 'user.$id', value: 2 }, { path: 'user.name', value: 'Jiro' }],
+          [{ path: 'user.id', value: 2 }, { path: 'user.name', value: 'Jiro' }],
         ],
       }
       const { result } = generate(input)

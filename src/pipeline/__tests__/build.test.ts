@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { build } from '../build'
+import { build, buildEntities } from '../build'
 import type { Group } from '../group'
 import type { ParsedPair, PathSegment } from '../../types'
 
@@ -86,5 +86,51 @@ describe('build', () => {
   it('yields nothing from empty group list', () => {
     const result = [...build([])]
     expect(result).toStrictEqual([])
+  })
+})
+
+describe('buildEntities', () => {
+  it('returns BuiltEntity with Map store and rootPath', () => {
+    const g = makeGroup([
+      [pair([seg('prop', 'user'), seg('prop', 'name')], 'Taro'),
+       pair([seg('prop', 'user'), seg('prop', 'id')], 1)],
+    ])
+    const entities = buildEntities([g])
+    expect(entities.length).toStrictEqual(1)
+    expect(entities[0].rootPath).toStrictEqual('user')
+    expect(entities[0].store.get('user')).toBeInstanceOf(Map)
+    const userMap = entities[0].store.get('user') as Map<string, unknown>
+    expect(userMap.get('name')).toStrictEqual('Taro')
+    expect(userMap.get('id')).toStrictEqual(1)
+  })
+
+  it('preserves source info from all rows in group', () => {
+    const g: Group = {
+      rows: [
+        { pairs: [pair([seg('prop', 'user'), seg('prop', 'id')], 1)], source: { sheet: 'sheetA', index: 0 } },
+        { pairs: [pair([seg('prop', 'user'), seg('arrayProp', 'tags')], 'admin')], source: { sheet: 'sheetB', index: 2 } },
+      ],
+    }
+    const entities = buildEntities([g])
+    expect(entities[0].source).toStrictEqual([
+      { sheet: 'sheetA', index: 0 },
+      { sheet: 'sheetB', index: 2 },
+    ])
+  })
+
+  it('builds multiple entities from multiple groups', () => {
+    const g1 = makeGroup([
+      [pair([seg('prop', 'user'), seg('prop', 'id')], 1)],
+    ])
+    const g2 = makeGroup([
+      [pair([seg('prop', 'user'), seg('prop', 'id')], 2)],
+    ])
+    const entities = buildEntities([g1, g2])
+    expect(entities.length).toStrictEqual(2)
+  })
+
+  it('returns empty array from empty group list', () => {
+    const entities = buildEntities([])
+    expect(entities).toStrictEqual([])
   })
 })

@@ -19,16 +19,39 @@ function row(pairs: ParsedPair[], sheet = 'sheet', index = 0): ParsedRow {
 
 describe('group', () => {
   describe('grouping by $key', () => {
-    it('groups rows with the same $key value into one group', () => {
+    it('groups rows with the same $key value and no non-array props into one group', () => {
       const rows = [
         row([pair([seg('prop', 'user'), seg('prop', 'id', true)], 1),
-             pair([seg('prop', 'user'), seg('prop', 'name')], 'Taro')]),
+             pair([seg('prop', 'user'), seg('arrayProp', 'info'), seg('prop', 'type')], 'google')]),
         row([pair([seg('prop', 'user'), seg('prop', 'id', true)], 1),
-             pair([seg('prop', 'user'), seg('arrayProp', 'info'), seg('prop', 'type')], 'google')], 'sheet', 1),
+             pair([seg('prop', 'user'), seg('arrayProp', 'info'), seg('prop', 'type')], 'facebook')], 'sheet', 1),
       ]
       const groups = [...group(rows)]
       expect(groups.length).toStrictEqual(1)
       expect(groups[0].rows.length).toStrictEqual(2)
+    })
+
+    it('groups $key rows with same $key value and same non-array prop into one group', () => {
+      const rows = [
+        row([pair([seg('prop', 'user'), seg('prop', 'id', true)], 1),
+             pair([seg('prop', 'user'), seg('arrayProp', 'info'), seg('prop', 'type')], 'google')]),
+        row([pair([seg('prop', 'user'), seg('prop', 'id', true)], 1),
+             pair([seg('prop', 'user'), seg('arrayProp', 'info'), seg('prop', 'type')], 'facebook')], 'sheet', 1),
+      ]
+      const groups = [...group(rows)]
+      expect(groups.length).toStrictEqual(1)
+      expect(groups[0].rows.length).toStrictEqual(2)
+    })
+
+    it('separates $key rows with same $key value but different non-array prop into different groups', () => {
+      const rows = [
+        row([pair([seg('prop', 'user'), seg('prop', 'id', true)], 1),
+             pair([seg('prop', 'user'), seg('prop', 'role')], 'admin')]),
+        row([pair([seg('prop', 'user'), seg('prop', 'id', true)], 1),
+             pair([seg('prop', 'user'), seg('prop', 'role')], 'editor')], 'sheet', 1),
+      ]
+      const groups = [...group(rows)]
+      expect(groups.length).toStrictEqual(2)
     })
 
     it('separates rows with different $key values into different groups', () => {

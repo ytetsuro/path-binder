@@ -1,14 +1,21 @@
-import type { InputData, GenerateOptions, GenerateResult, PathSegment } from './types'
+import type { InputData, GenerateOptions, GenerateResult, ParseSkipped, ParsedRow, BuiltEntity, PathSegment } from './types'
 import { flatten } from './pipeline/flatten'
 import { transform } from './pipeline/transform'
 import { group } from './pipeline/group'
-import { build } from './pipeline/build'
+import { buildEntities } from './pipeline/build'
+import { separate } from './pipeline/separate'
+import { validateReferenceRows } from './pipeline/validate'
+import { resolve } from './pipeline/resolve'
+import { toRecord } from './store/toRecord'
 
 /**
  * The library's sole entry point.
  *
- * Connects the 5-stage pipeline to generate objects from input data.
- * flatten → transform → group → build → collect
+ * Connects the 2-pass pipeline to generate objects from input data.
+ * flatten → transform → separate
+ *   → Pass 1: group(primary) → buildEntities
+ *   → Pass 2: validate(reference) → group → resolve
+ *   → collect
  *
  * Reason for creating/destroying scoped cache (Map) in this function scope:
  * Module-level persistent cache risks unbounded growth of path strings
@@ -28,10 +35,59 @@ export function generate(
 
   const flatRows = flatten(input)
   const { rows: parsedRows, skipped } = transform(flatRows, cache, schema, skipScope)
-  const groups = group(parsedRows)
-  const records = build(groups)
+  const { primary, reference } = separate(parsedRows)
 
-  return { result: collect(records), skipped }
+  // Pass 1: primary data
+  const primaryGroups = group(primary)
+  const entities = buildEntities(primaryGroups)
+
+  // Pass 2: reference data
+  const referenceSkipped = processReference(reference, entities)
+  const allSkipped: ParseSkipped[] = skipped.concat(referenceSkipped)
+
+  // Collect: convert entities to records
+  const records = entities.map((e) => toRecord(e.store))
+  return { result: collect(records), skipped: allSkipped }
+}
+
+/**
+ * Process reference rows against existing entities.
+ *
+ * Reason for extracting as a separate function:
+ * Aligns abstraction level with other pipeline stages called in generate()
+ */
+function processReference(
+  reference: readonly ParsedRow[],
+  entities: readonly BuiltEntity[],
+): ParseSkipped[] {
+  if (reference.length === 0) {
+    return []
+  }
+
+  if (entities.length === 0) {
+    // All rows are $key rows with no primary data → skip all reference rows
+    return reference.map((row) => {
+      const keyPair = row.pairs.find((p) => p.segments.some((s) => s.isKey))
+      return {
+        name: row.source.sheet,
+        path: keyPair
+          ? keyPair.segments.map((s) => s.isKey ? `$${s.name}` : s.name).join('.')
+          : '',
+        value: keyPair ? String(keyPair.value) : '',
+        index: row.source.index,
+        reason: 'no_primary_data' as const,
+      }
+    })
+  }
+
+  const { valid, skipped: vSkipped } = validateReferenceRows(reference)
+  if (valid.length === 0) {
+    return [...vSkipped]
+  }
+
+  const refGroups = group(valid)
+  const { skipped: rSkipped } = resolve(refGroups, entities)
+  return vSkipped.concat(rSkipped)
 }
 
 /**
