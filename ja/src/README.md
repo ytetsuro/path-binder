@@ -126,11 +126,11 @@ import { generate, defineSchema, asNumber, asString, arrayOf } from 'path-binder
 
 const input = {
   sheetA: [
-    [{ path: 'user.$id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+    [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }],
+    [{ path: 'user.id', value: 2 }, { path: 'user.name', value: 'Jiro' }],
   ],
   sheetB: [
     [{ path: 'user.$id', value: 1 }, { path: 'user.info[].type', value: 'google' }],
-    [{ path: 'user.$id', value: 2 }, { path: 'user.name', value: 'Jiro' }],
   ],
 }
 
