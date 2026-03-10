@@ -1,0 +1,13 @@
+[book]
+title = "path-binder"
+language = "en"
+
+[build]
+build-dir = "../website/en"
+
+[output.html]
+theme = "../theme"
+additional-css = ["../theme/css/custom.css"]
+additional-js = ["../theme/lang-switch.js", "../js/playground-loader.js"]
+site-url = "/path-binder/en/"
+git-repository-url = "https://github.com/ytetsuro/path-binder"

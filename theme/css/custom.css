@@ -1,0 +1,578 @@
+/* --- Design Tokens --- */
+:root {
+  --pb-primary: #1a73e8;
+  --pb-primary-hover: #1557b0;
+  --pb-text-primary: #202124;
+  --pb-text-secondary: #5f6368;
+  --pb-border: #dadce0;
+  --pb-surface: #ffffff;
+  --pb-surface-variant: #f1f3f4;
+  --pb-background: #f8f9fa;
+  --pb-shadow-sm: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  --pb-shadow-md: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+  --pb-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --pb-transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- Font Family --- */
+body {
+  font-family: 'Google Sans', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+code, pre {
+  font-family: 'Source Code Pro', 'Fira Code', monospace;
+}
+
+/* --- Light Theme Overrides --- */
+.light {
+  --bg: var(--pb-background);
+  --fg: var(--pb-text-primary);
+  --sidebar-bg: var(--pb-surface);
+  --sidebar-fg: var(--pb-text-primary);
+  --sidebar-active: var(--pb-primary);
+  --links: var(--pb-primary);
+  --search-mark-bg: rgba(26, 115, 232, 0.15);
+}
+
+/* --- Sidebar Styling --- */
+.sidebar .sidebar-scrollbox {
+  background: var(--pb-surface);
+}
+
+/* Active sidebar item: left blue border + light blue background */
+.sidebar .sidebar-scrollbox .active {
+  border-left: 3px solid var(--pb-primary);
+  background-color: rgba(26, 115, 232, 0.08);
+  padding-left: 10px;
+}
+
+.sidebar .sidebar-scrollbox a {
+  color: var(--pb-text-primary);
+  transition: color var(--pb-transition-fast), background-color var(--pb-transition-fast);
+}
+
+.sidebar .sidebar-scrollbox a:hover {
+  color: var(--pb-primary);
+  background-color: var(--pb-surface-variant);
+}
+
+/* --- Menu Bar --- */
+.menu-bar {
+  border-bottom: 1px solid var(--pb-border);
+}
+
+.menu-title {
+  font-weight: 500;
+  color: var(--pb-text-primary);
+}
+
+/* --- Content Area --- */
+.content main {
+  max-width: 900px;
+  padding: 0 24px;
+}
+
+.content main h1 {
+  font-weight: 600;
+  color: var(--pb-text-primary);
+  border-bottom: 1px solid var(--pb-border);
+  padding-bottom: 12px;
+}
+
+.content main h2 {
+  font-weight: 600;
+  color: var(--pb-text-primary);
+}
+
+.content main a {
+  color: var(--pb-primary);
+  text-decoration: none;
+}
+
+.content main a:hover {
+  text-decoration: underline;
+}
+
+/* --- Code Blocks --- */
+.content main pre {
+  border: 1px solid var(--pb-border);
+  border-radius: 8px;
+}
+
+/* --- Language Switcher Button --- */
+#lang-switch {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 4px;
+  color: var(--pb-primary);
+  text-decoration: none;
+  transition: background-color var(--pb-transition-fast);
+}
+
+#lang-switch:hover {
+  background-color: rgba(26, 115, 232, 0.08);
+}
+
+/* --- Feature Cards (Home page) --- */
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin: 40px 0;
+}
+
+.feature-card {
+  background-color: var(--pb-surface);
+  border: 1px solid var(--pb-border);
+  border-radius: 8px;
+  padding: 28px;
+  transition: box-shadow var(--pb-transition-normal), border-color var(--pb-transition-normal);
+}
+
+.feature-card:hover {
+  box-shadow: var(--pb-shadow-md);
+  border-color: var(--pb-primary);
+}
+
+.feature-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background-color: rgba(26, 115, 232, 0.08);
+  color: var(--pb-primary);
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+.feature-card__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--pb-text-primary);
+  margin: 0 0 8px;
+}
+
+.feature-card__description {
+  font-size: 15px;
+  color: var(--pb-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ==========================================================================
+   Hero Section (Home page)
+   ========================================================================== */
+
+.hero {
+  text-align: center;
+  padding: 48px 0 32px;
+}
+
+.hero h1 {
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--pb-text-primary);
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+}
+
+.hero .tagline {
+  font-size: 20px;
+  color: var(--pb-text-secondary);
+  margin-top: 12px;
+}
+
+.hero .cta-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.hero .cta-buttons a {
+  display: inline-block;
+  padding: 10px 24px;
+  border-radius: 4px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color var(--pb-transition-fast), box-shadow var(--pb-transition-fast);
+}
+
+.hero .cta-buttons .primary {
+  background-color: var(--pb-primary);
+  color: #ffffff;
+}
+
+.hero .cta-buttons .primary:hover {
+  background-color: var(--pb-primary-hover);
+  box-shadow: var(--pb-shadow-sm);
+}
+
+.hero .cta-buttons .secondary {
+  border: 1px solid var(--pb-border);
+  color: var(--pb-primary);
+  background-color: var(--pb-surface);
+}
+
+.hero .cta-buttons .secondary:hover {
+  background-color: var(--pb-surface-variant);
+}
+
+/* --- Story Section --- */
+.story-section {
+  background-color: var(--pb-surface-variant);
+  border-radius: 8px;
+  padding: 32px;
+  margin: 32px 0;
+}
+
+.story-section h2 {
+  border-bottom: none !important;
+}
+
+/* ==========================================================================
+   Playground Container (inline code editors)
+   ========================================================================== */
+
+.playground {
+  margin: 24px 0;
+}
+
+.playground-container {
+  margin-top: 16px;
+}
+
+.playground-container iframe {
+  width: 100%;
+  height: 400px;
+  border: 1px solid var(--pb-border);
+  border-radius: 8px;
+  background-color: var(--pb-surface);
+}
+
+/* ==========================================================================
+   Before/After Visual (Excel → JSON transformation)
+   ========================================================================== */
+
+.before-after {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 32px 0;
+  padding: 28px;
+  background-color: var(--pb-surface-variant);
+  border-radius: 12px;
+}
+
+.before-after__label {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pb-text-secondary);
+  margin-bottom: 8px;
+}
+
+.before-after__arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: var(--pb-primary);
+  font-weight: 700;
+  padding: 4px 0;
+}
+
+.before-after__input,
+.before-after__output {
+  min-width: 0;
+}
+
+.before-after__input table,
+.before-after__output table {
+  font-size: 15px;
+}
+
+.before-after__output pre {
+  margin: 0 !important;
+  font-size: 15px;
+}
+
+/* Before/After is already vertical (flex-column), so mobile just adjusts padding */
+@media (max-width: 768px) {
+  .before-after {
+    padding: 20px;
+  }
+
+  .before-after__arrow {
+    font-size: 24px;
+  }
+}
+
+/* ==========================================================================
+   Hero Sub-tagline
+   ========================================================================== */
+
+.hero-sub {
+  font-size: 16px;
+  color: var(--pb-text-secondary);
+  margin-top: 8px;
+  font-weight: 400;
+}
+
+/* ==========================================================================
+   Enhanced Table Styling
+   ========================================================================== */
+
+.content main table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 15px;
+  border: 1px solid var(--pb-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.content main table thead {
+  background-color: var(--pb-surface-variant);
+}
+
+.content main table th {
+  font-weight: 600;
+  color: var(--pb-text-primary);
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 2px solid var(--pb-border);
+  font-size: 15px;
+}
+
+.content main table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--pb-border);
+  color: var(--pb-text-primary);
+}
+
+.content main table tbody tr:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.content main table tbody tr:hover {
+  background-color: rgba(26, 115, 232, 0.04);
+}
+
+.content main table code {
+  font-size: 14px;
+  padding: 2px 6px;
+  background-color: var(--pb-surface-variant);
+  border-radius: 4px;
+}
+
+/* ==========================================================================
+   Details / Summary (Collapsible FAQ)
+   ========================================================================== */
+
+.content main details {
+  margin: 16px 0;
+  padding: 16px 20px;
+  background-color: var(--pb-surface);
+  border: 1px solid var(--pb-border);
+  border-radius: 8px;
+  transition: border-color var(--pb-transition-fast);
+}
+
+.content main details[open] {
+  border-color: var(--pb-primary);
+}
+
+.content main details summary {
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--pb-text-primary);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.content main details summary::before {
+  content: '▶';
+  font-size: 11px;
+  color: var(--pb-primary);
+  transition: transform var(--pb-transition-fast);
+}
+
+.content main details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.content main details summary::-webkit-details-marker {
+  display: none;
+}
+
+.content main details > *:not(summary) {
+  margin-top: 12px;
+  color: var(--pb-text-secondary);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* ==========================================================================
+   Blockquote as Navigation Footer
+   ========================================================================== */
+
+.content main blockquote {
+  border-left: 3px solid var(--pb-primary);
+  background-color: rgba(26, 115, 232, 0.04);
+  padding: 20px 24px;
+  margin: 32px 0;
+  border-radius: 0 8px 8px 0;
+  font-size: 15px;
+}
+
+.content main blockquote strong {
+  color: var(--pb-primary);
+}
+
+/* ==========================================================================
+   Syntax Reference Table (Path → Output mapping)
+   ========================================================================== */
+
+.syntax-table {
+  margin: 24px 0;
+}
+
+.syntax-table table {
+  table-layout: fixed;
+}
+
+.syntax-table table th:first-child {
+  width: 30%;
+}
+
+.syntax-table table th:nth-child(2) {
+  width: 25%;
+}
+
+.syntax-table table th:last-child {
+  width: 45%;
+}
+
+/* ==========================================================================
+   Category Headers for Skip Reasons
+   ========================================================================== */
+
+.skip-category {
+  margin-top: 32px;
+  margin-bottom: 8px;
+  padding: 8px 16px;
+  background-color: var(--pb-surface-variant);
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--pb-text-primary);
+}
+
+/* ==========================================================================
+   Concept Diagram (visual explanation boxes)
+   ========================================================================== */
+
+.concept-diagram {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 16px;
+  align-items: start;
+  margin: 24px 0;
+  padding: 20px;
+  background-color: var(--pb-surface);
+  border: 1px solid var(--pb-border);
+  border-radius: 8px;
+}
+
+.concept-diagram__panel {
+  padding: 12px;
+}
+
+.concept-diagram__panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pb-primary);
+  margin-bottom: 8px;
+}
+
+.concept-diagram__connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: var(--pb-primary);
+  padding-top: 30px;
+}
+
+@media (max-width: 768px) {
+  .concept-diagram {
+    grid-template-columns: 1fr;
+  }
+
+  .concept-diagram__connector {
+    padding-top: 0;
+  }
+}
+
+/* ==========================================================================
+   Content Typography Improvements
+   ========================================================================== */
+
+.content main {
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.content main p {
+  margin-bottom: 16px;
+}
+
+.content main h2 {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--pb-border);
+}
+
+.content main h2:first-of-type {
+  border-top: none;
+  margin-top: 0;
+}
+
+.content main h3 {
+  margin-top: 32px;
+  color: var(--pb-text-primary);
+}
+
+.content main > pre {
+  margin: 20px 0;
+}
+
+/* Inline code styling */
+.content main :not(pre) > code {
+  padding: 2px 6px;
+  background-color: var(--pb-surface-variant);
+  border-radius: 4px;
+  font-size: 0.875em;
+  color: var(--pb-primary);
+}
+
+/* ==========================================================================
+   Responsive: Playground
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .playground-container iframe {
+    height: 500px;
+  }
+}
