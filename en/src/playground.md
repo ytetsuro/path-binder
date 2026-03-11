@@ -1,6 +1,6 @@
 # Playground
 
-Drop an Excel file (.xlsx) to convert it into nested JSON using path-binder. The second row of each sheet defines the JSON paths, and rows 3+ are data.
+Select an Excel file (.xlsx) to convert it into nested JSON using path-binder. Click the area below to choose a file. The second row of each sheet defines the JSON paths, and rows 3+ are data.
 
 **Excel format example:**
 
@@ -42,7 +42,7 @@ Drop an Excel file (.xlsx) to convert it into nested JSON using path-binder. The
 </head>
 <body>
   <div id="dropzone">
-    Drop .xlsx file here or click to select
+    Click here to select a .xlsx file
     <!-- Not using D&D alone: cross-origin iframe nesting blocks drop events. -->
     <input type="file" id="file-input" accept=".xlsx" style="display:none">
   </div>
