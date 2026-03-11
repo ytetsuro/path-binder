@@ -4,6 +4,8 @@ A library that combines row data from multiple sheets using path syntax to gener
 
 Transforms flat "row × column" data from spreadsheets or CSVs into nested objects following dot-notation paths. Supports cross-sheet data merging, array operations, and schema-based type casting.
 
+**[Documentation](https://path-binder.botch.me)** — Full guide with interactive examples
+
 ## Installation
 
 ```bash
