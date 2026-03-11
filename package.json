@@ -1,6 +1,6 @@
 {
   "name": "path-binder",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Zero-dependency TypeScript library that generates nested object structures from path-value pairs (e.g. user.name, items[].price). Supports schema-based type casting, array indexing, $key grouping, and multi-source data merging",
   "type": "module",
   "license": "MIT",
