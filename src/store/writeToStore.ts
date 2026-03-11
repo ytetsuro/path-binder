@@ -14,6 +14,7 @@ export function writeToStore(
   store: Map<string, unknown>,
   segments: readonly PathSegment[],
   value: unknown,
+  rowContext?: Map<string, Map<string, unknown>>,
 ): void {
   let current = store
   const lastIndex = segments.length - 1
@@ -37,6 +38,21 @@ export function writeToStore(
         arr.push(value)
         return
       }
+      // Reason for not always creating a new Map:
+      // Multiple properties in the same row would split into separate array elements
+      if (rowContext !== undefined) {
+        const contextKey = buildContextKey(segments, i)
+        const existing = rowContext.get(contextKey)
+        if (existing !== undefined) {
+          current = existing
+          continue
+        }
+        const child = new Map<string, unknown>()
+        arr.push(child)
+        rowContext.set(contextKey, child)
+        current = child
+        continue
+      }
       const child = new Map<string, unknown>()
       arr.push(child)
       current = child
@@ -54,6 +70,25 @@ export function writeToStore(
     }
     current = getOrCreateChildMapAtIndex(arr, seg.index!)
   }
+}
+
+/**
+ * Build a context key from segments up to and including the given index.
+ * Reason for not using the full segment path:
+ * Only the prefix up to the arrayProp determines which element to reuse
+ */
+function buildContextKey(segments: readonly PathSegment[], endIndex: number): string {
+  let key = ''
+  for (let i = 0; i <= endIndex; i++) {
+    if (i > 0) {
+      key += '.'
+    }
+    key += segments[i].name
+    if (segments[i].type === 'arrayProp') {
+      key += '[]'
+    }
+  }
+  return key
 }
 
 /**

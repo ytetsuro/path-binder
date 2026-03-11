@@ -155,6 +155,23 @@ describe('integration tests', () => {
       })
     })
 
+    it('groups multiple array properties into one element within a single row', () => {
+      const input: InputData = {
+        user: [
+          [
+            { path: 'user.id', value: 1 },
+            { path: 'user.name', value: 'Taro' },
+            { path: 'user.loginInfo[].type', value: 'google' },
+            { path: 'user.loginInfo[].name', value: 'Google' },
+          ],
+        ],
+      }
+      const { result } = generate(input)
+      expect(result).toStrictEqual({
+        user: [{ id: 1, name: 'Taro', loginInfo: [{ type: 'google', name: 'Google' }] }],
+      })
+    })
+
     it('builds sparse array with index access', () => {
       const input: InputData = {
         sheet1: [

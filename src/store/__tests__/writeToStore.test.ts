@@ -79,6 +79,56 @@ describe('writeToStore', () => {
     })
   })
 
+  describe('rowContext (same-row array element grouping)', () => {
+    it('merges multiple properties into one array element when sharing rowContext', () => {
+      const store = new Map<string, unknown>()
+      const rowContext = new Map<string, Map<string, unknown>>()
+      writeToStore(store, [arrayProp('info'), prop('type')], 'google', rowContext)
+      writeToStore(store, [arrayProp('info'), prop('name')], 'Google', rowContext)
+      expect(toRecord(store)).toStrictEqual({
+        info: [{ type: 'google', name: 'Google' }],
+      })
+    })
+
+    it('creates separate elements without rowContext (different rows)', () => {
+      const store = new Map<string, unknown>()
+      writeToStore(store, [arrayProp('info'), prop('type')], 'google')
+      writeToStore(store, [arrayProp('info'), prop('name')], 'Google')
+      expect(toRecord(store)).toStrictEqual({
+        info: [{ type: 'google' }, { name: 'Google' }],
+      })
+    })
+
+    it('creates separate elements across different rowContexts', () => {
+      const store = new Map<string, unknown>()
+      const ctx1 = new Map<string, Map<string, unknown>>()
+      const ctx2 = new Map<string, Map<string, unknown>>()
+      writeToStore(store, [arrayProp('info'), prop('type')], 'google', ctx1)
+      writeToStore(store, [arrayProp('info'), prop('type')], 'facebook', ctx2)
+      expect(toRecord(store)).toStrictEqual({
+        info: [{ type: 'google' }, { type: 'facebook' }],
+      })
+    })
+
+    it('merges nested array properties with rowContext', () => {
+      const store = new Map<string, unknown>()
+      const rowContext = new Map<string, Map<string, unknown>>()
+      writeToStore(store, [prop('user'), arrayProp('info'), prop('type')], 'google', rowContext)
+      writeToStore(store, [prop('user'), arrayProp('info'), prop('name')], 'Google', rowContext)
+      expect(toRecord(store)).toStrictEqual({
+        user: { info: [{ type: 'google', name: 'Google' }] },
+      })
+    })
+
+    it('does not affect terminal arrayProp (value push)', () => {
+      const store = new Map<string, unknown>()
+      const rowContext = new Map<string, Map<string, unknown>>()
+      writeToStore(store, [arrayProp('tags')], 'admin', rowContext)
+      writeToStore(store, [arrayProp('tags')], 'editor', rowContext)
+      expect(toRecord(store)).toStrictEqual({ tags: ['admin', 'editor'] })
+    })
+  })
+
   describe('mixed patterns', () => {
     it('writes value to composite path of prop + arrayProp + prop', () => {
       const store = new Map<string, unknown>()

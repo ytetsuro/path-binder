@@ -13,8 +13,9 @@ export function build(groups: readonly Group[]): Record<string, unknown>[] {
   return groups.map((g) => {
     const store = new Map<string, unknown>()
     for (const row of g.rows) {
+      const rowContext = new Map<string, Map<string, unknown>>()
       for (const pair of row.pairs) {
-        writeToStore(store, pair.segments, pair.value)
+        writeToStore(store, pair.segments, pair.value, rowContext)
       }
     }
     return toRecord(store)
@@ -33,8 +34,9 @@ export function buildEntities(groups: readonly Group[]): BuiltEntity[] {
   return groups.map((g) => {
     const store = new Map<string, unknown>()
     for (const row of g.rows) {
+      const rowContext = new Map<string, Map<string, unknown>>()
       for (const pair of row.pairs) {
-        writeToStore(store, pair.segments, pair.value)
+        writeToStore(store, pair.segments, pair.value, rowContext)
       }
     }
     const rootPath = extractRootPath(g)
