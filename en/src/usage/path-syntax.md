@@ -203,6 +203,75 @@ const { result } = generate(input)
 
 ---
 
+## Row Grouping
+
+**When to use**: When multiple rows share the same identity and you want them to merge into a single object automatically
+
+When rows have identical values for all non-array paths (property-only segments), path-binder automatically groups them into one object. Array paths (`[]`) are excluded from the grouping key — their values are collected into an array within the grouped object.
+
+This means you can represent one-to-many relationships in a single sheet, without splitting data across multiple sheets or using reference keys (`$`).
+
+### How It Works
+
+1. path-binder examines each row's **property-only values** (paths without `[]`)
+2. Rows with identical property values are treated as the **same object**
+3. Values from `[]` paths across those rows are **collected into arrays**
+
+### Example: Users with Multiple Login Methods
+
+Imagine a flat data source like a spreadsheet:
+
+| user.id | user.name | user.loginInfo[].type |
+|---------|-----------|----------------------|
+| 1       | Taro      | emailLink            |
+| 1       | Taro      | ID/password          |
+| 2       | Jiro      | emailLink            |
+
+The first two rows share `user.id = 1` and `user.name = Taro` (all non-array values are identical), so they are grouped into a single user object. The `loginInfo[].type` values are collected into an array.
+
+```typescript
+import { generate } from 'path-binder'
+
+const input = {
+  Sheet1: [
+    [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }, { path: 'user.loginInfo[].type', value: 'emailLink' }],
+    [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'Taro' }, { path: 'user.loginInfo[].type', value: 'ID/password' }],
+    [{ path: 'user.id', value: 2 }, { path: 'user.name', value: 'Jiro' }, { path: 'user.loginInfo[].type', value: 'emailLink' }],
+  ],
+}
+
+const { result } = generate(input)
+// → {
+//   user: [
+//     { id: 1, name: 'Taro', loginInfo: [{ type: 'emailLink' }, { type: 'ID/password' }] },
+//     { id: 2, name: 'Jiro', loginInfo: [{ type: 'emailLink' }] }
+//   ]
+// }
+```
+
+### What Counts as a Grouping Key?
+
+| Path type | Included in grouping key? | Example |
+|-----------|--------------------------|---------|
+| Property only (`prop.prop`) | Yes | `user.id`, `user.name` |
+| Array append (`prop[]`) | No — collected into array | `user.tags[]` |
+| Nested array (`prop.prop[]`) | No — collected into array | `user.loginInfo[].type` |
+
+> **Key insight**: Only property paths determine object identity. Array paths are always aggregated, never compared.
+
+### Without Grouping vs. With Grouping
+
+To appreciate what row grouping gives you, consider the alternative:
+
+| Approach | Sheets needed | Complexity |
+|----------|--------------|------------|
+| **Without grouping** | 2+ sheets with reference keys (`$`) to join user data and login methods | Higher — requires understanding `$` joins |
+| **With grouping** | 1 sheet — just repeat the shared values | Lower — data reads naturally top to bottom |
+
+For simple one-to-many relationships, grouping keeps your data in one place. Reserve reference keys (`$`) for cases where data genuinely belongs in separate sheets.
+
+---
+
 ## Combination Patterns
 
 Common path combination patterns used in practice.
