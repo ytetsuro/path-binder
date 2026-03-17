@@ -32,7 +32,6 @@ export function resolve(
   for (const group of refGroups) {
     const allPairs = group.rows.flatMap((row) => row.pairs)
     const keyPairs = allPairs.filter((p) => hasKeySegment(p))
-    const dataPairs = allPairs.filter((p) => !hasKeySegment(p))
 
     if (keyPairs.length === 0) {
       continue
@@ -47,7 +46,7 @@ export function resolve(
       continue
     }
 
-    const conflictSkipped = applyDataToEntities(matchedEntities, dataPairs, group)
+    const conflictSkipped = applyDataToEntities(matchedEntities, group)
     skipped.push(...conflictSkipped)
   }
 
@@ -77,26 +76,34 @@ function matchesAllKeys(entity: BuiltEntity, keyPairs: readonly ParsedPair[]): b
 }
 
 /**
- * Apply non-$key data pairs to all matched entities.
+ * Apply non-$key data pairs to all matched entities, processing row by row.
  * Returns property_conflict skipped entries when a pair would overwrite existing data.
+ *
+ * Reason for processing per-row with rowContext instead of flat pair iteration:
+ * arrayProp pairs from the same row (e.g. loginInfo[].id and loginInfo[].name)
+ * must be grouped into a single array element via rowContext.
+ * Without rowContext, each pair creates a separate array element.
  *
  * Reason for checking existence before write instead of after:
  * Prevents mutation of primary data, ensuring "root wins" behavior
  */
 function applyDataToEntities(
   entities: readonly BuiltEntity[],
-  dataPairs: readonly ParsedPair[],
   group: Group,
 ): ParseSkipped[] {
   const skipped: ParseSkipped[] = []
 
-  for (const pair of dataPairs) {
+  for (const row of group.rows) {
+    const dataPairs = row.pairs.filter((p) => !hasKeySegment(p))
     for (const entity of entities) {
-      if (hasConflict(entity, pair)) {
-        skipped.push(toConflictSkipped(group, pair))
-        continue
+      const rowContext = new Map<string, Map<string, unknown>>()
+      for (const pair of dataPairs) {
+        if (hasConflict(entity, pair)) {
+          skipped.push(toConflictSkipped(group, pair))
+          continue
+        }
+        writeToStore(entity.store, pair.segments, pair.value, rowContext)
       }
-      writeToStore(entity.store, pair.segments, pair.value)
     }
   }
 

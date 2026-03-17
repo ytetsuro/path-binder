@@ -1,4 +1,4 @@
-import type { ParsedRow, ParsedPair, ParseSkipped, ParseSkipReason } from '../types'
+import type { ParsedRow, ParsedPair, ParseSkipped, ParseSkipReason, PathSegment } from '../types'
 
 /**
  * Result of validating reference rows.
@@ -100,20 +100,23 @@ function checkInvalidKeyValue(keyPairs: readonly ParsedPair[]): ParseSkipReason 
 }
 
 /**
- * Check if the row has both $key and non-$key pairs with the same property name.
+ * Check if the row has both $key and non-$key pairs with the same property path.
+ *
+ * Reason for comparing full path instead of last segment name only:
+ * Last-name-only comparison produces false positives when a nested property
+ * (e.g. loginInfo[].id) shares its leaf name with a $key (e.g. $id)
  */
 function checkConflictingKeyProp(
   allPairs: readonly ParsedPair[],
   keyPairs: readonly ParsedPair[],
 ): ParseSkipReason | undefined {
-  const keyNames = new Set(
-    keyPairs.map((p) => extractKeyName(p)),
+  const keyPaths = new Set(
+    keyPairs.map((p) => buildSegmentPath(p.segments)),
   )
 
   const nonKeyPairs = allPairs.filter((p) => !hasKeySegment(p))
   for (const pair of nonKeyPairs) {
-    const lastName = pair.segments[pair.segments.length - 1]?.name
-    if (keyNames.has(lastName)) {
+    if (keyPaths.has(buildSegmentPath(pair.segments))) {
       return 'conflicting_key_prop'
     }
   }
@@ -135,6 +138,18 @@ function checkMixedKeyRoot(keyPairs: readonly ParsedPair[]): ParseSkipReason | u
     return 'mixed_key_root'
   }
   return undefined
+}
+
+/**
+ * Build a canonical path string from segments for equality comparison.
+ * Uses segment names joined by ".".
+ *
+ * Reason for not including segment type in the path string:
+ * The store uses segment name as the Map key regardless of type,
+ * so name-level collision is the correct conflict criterion
+ */
+function buildSegmentPath(segments: readonly PathSegment[]): string {
+  return segments.map((s) => s.name).join('.')
 }
 
 function hasKeySegment(pair: ParsedPair): boolean {

@@ -172,6 +172,26 @@ describe('integration tests', () => {
       })
     })
 
+    it('merges $key reference with array properties sharing the key leaf name', () => {
+      const input: InputData = {
+        user: [
+          [{ path: 'user.id', value: 1 }, { path: 'user.name', value: 'taro' }],
+          [{ path: 'user.id', value: 2 }, { path: 'user.name', value: 'jiro' }],
+        ],
+        info: [
+          [{ path: 'user.$id', value: 1 }, { path: 'user.loginInfo[].id', value: 'google' }, { path: 'user.loginInfo[].name', value: 'Google' }],
+        ],
+      }
+      const { result, skipped } = generate(input)
+      expect(result).toStrictEqual({
+        user: [
+          { id: 1, name: 'taro', loginInfo: [{ id: 'google', name: 'Google' }] },
+          { id: 2, name: 'jiro' },
+        ],
+      })
+      expect(skipped).toStrictEqual([])
+    })
+
     it('builds sparse array with index access', () => {
       const input: InputData = {
         sheet1: [

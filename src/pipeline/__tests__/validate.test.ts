@@ -94,6 +94,17 @@ describe('validateReferenceRows', () => {
     expect(result.skipped[0].reason).toStrictEqual('conflicting_key_prop')
   })
 
+  it('does NOT conflict when $key name matches a deeply nested property name', () => {
+    const rows = [
+      row([pair([seg('prop', 'user'), seg('prop', 'id', true)], 1),
+           pair([seg('prop', 'user'), seg('arrayProp', 'loginInfo'), seg('prop', 'id')], 'google'),
+           pair([seg('prop', 'user'), seg('arrayProp', 'loginInfo'), seg('prop', 'name')], 'Google')]),
+    ]
+    const result = validateReferenceRows(rows)
+    expect(result.valid).toStrictEqual(rows)
+    expect(result.skipped).toStrictEqual([])
+  })
+
   it('skips mixed_key_root: $key segments from different root paths', () => {
     const rows = [
       row([pair([seg('prop', 'user'), seg('prop', 'id', true)], 1),
